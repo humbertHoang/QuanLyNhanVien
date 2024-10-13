@@ -17,26 +17,25 @@ export default class Employee {
     this.luongCB = luongCB;
     this.chucvu = chucvu;
     this.giolam = giolam;
-    this.tongluong = 0;
-    this.xeploai = 0;
+    this.tongluong = this.tinhLuong();
+    this.xeploai = this.tinhXepLoai();
   }
 
   tinhLuong() {
-    this.tongluong =
-      this.chucvu === "Sếp"
-        ? this.luongCB * 3
-        : this.chucvu === "Trưởng phòng"
-        ? this.luongCB * 2
-        : this.luongCB;
+    return this.chucvu === "Sếp"
+      ? (this.tongluong = this.luongCB * 3)
+      : this.chucvu === "Trưởng phòng"
+      ? (this.tongluong = this.luongCB * 2)
+      : (this.tongluong = this.luongCB);
   }
   tinhXepLoai() {
-    this.xeploai =
+    return (this.xeploai =
       this.giolam >= 192
-        ? "Xuất sắc"
+        ? "Xuất sắc"
         : this.giolam >= 176
-        ? "Giỏi"
+        ? "Giỏi"
         : this.giolam >= 160
-        ? "Khá"
-        : "Trung bình";
+        ? "Khá"
+        : "Trung bình");
   }
 }

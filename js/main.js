@@ -40,11 +40,27 @@
 import Employee from "./Employee.js";
 import EmployeeHandle from "./EmployeeHandle.js";
 let employeeHandle = new EmployeeHandle();
-function displayEmployee(arrEmployee) {
+async function fetchData() {
+  try {
+    const response = await fetch("data/employee.json");
+    const data = await response.json();
+    employeeHandle.employees = await data.map(
+      (element) => new Employee(element)
+    );
+    setLocalStorage();
+    getLocalStorage();
+  } catch (error) {
+    console.log(error);
+  }
+}
+fetchData();
+
+function displayTable(arrEmployee) {
   const elementTable = document.getElementById("tableDanhSach");
-  let employeesTable = "";
-  arrEmployee.map((employee) => {
-    let trEmployee = `<tr>
+  const html = arrEmployee.reduce(
+    (html, employee) =>
+      html +
+      `<tr>
         <td>${employee.tknv}</td>
         <td>${employee.name}</td>
         <td>${employee.email}</td>
@@ -53,13 +69,15 @@ function displayEmployee(arrEmployee) {
         <td>${employee.tongluong}</td>
         <td>${employee.xeploai}</td>
         <td>
-          <button data-toggle="modal" data-target="#myModal" class="btn btn-outline-info">Xem</button>
-          <button class="btn btn-danger">Xóa</button>
+          <button id="btnTimNV" data-tknv="${employee.tknv}" data-toggle="modal" data-target="#myModal" class="btn btn-outline-info">Xem</button>
+          <button id="btnXoa" data-tknv="${employee.tknv}" class="btn btn-danger">Xóa</button>
         </td>
-    </tr>`;
-    employeesTable += trEmployee;
-  });
-  elementTable.innerHTML = employeesTable;
+      </tr>`,
+    ""
+  );
+  elementTable.innerHTML = html;
+  attachDetailEvent();
+  attachDeleteEvent();
 }
 function setLocalStorage() {
   localStorage.setItem(
@@ -71,10 +89,11 @@ function getLocalStorage() {
   const json = localStorage.getItem("EmployeeList");
   if (json) {
     employeeHandle.employees = JSON.parse(json);
-    displayEmployee(employeeHandle.employees);
+    displayTable(employeeHandle.employees);
   }
 }
-function addEmployee() {
+
+function addToTable() {
   const tknv = document.getElementById("tknv").value;
   const name = document.getElementById("name").value;
   const email = document.getElementById("email").value;
@@ -83,7 +102,6 @@ function addEmployee() {
   const luongCB = document.getElementById("luongCB").value;
   const chucvu = document.getElementById("chucvu").value;
   const giolam = document.getElementById("gioLam").value;
-  console.log(tknv, name, email, password, datepicker, luongCB, chucvu, giolam);
   const employee = new Employee({
     tknv,
     name,
@@ -94,13 +112,105 @@ function addEmployee() {
     chucvu,
     giolam,
   });
-  employee.tinhLuong();
-  employee.tinhXepLoai();
-  console.log(employee);
   employeeHandle.addEmployee(employee);
   setLocalStorage();
   getLocalStorage();
 }
-window.onload = function () {
-  document.getElementById("btnThemNV").onclick = addEmployee;
+function attachDetailEvent() {
+  const btns = document.querySelectorAll("#btnTimNV");
+  btns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tknv = btn.getAttribute("data-tknv");
+      getDetail(tknv);
+    });
+  });
+}
+function attachDeleteEvent() {
+  const btns = document.querySelectorAll("#btnXoa");
+  btns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tknv = btn.getAttribute("data-tknv");
+      deleteFromTable(tknv);
+    });
+  });
+}
+function getDetail(tknv) {
+  const employee = employeeHandle.getEmployees(tknv);
+  document.getElementById("tknv").value = employee[0].tknv;
+  document.getElementById("name").value = employee[0].name;
+  document.getElementById("email").value = employee[0].email;
+  document.getElementById("password").value = employee[0].password;
+  document.getElementById("datepicker").value = employee[0].datepicker;
+  document.getElementById("luongCB").value = employee[0].luongCB;
+  document.getElementById("chucvu").value = employee[0].chucvu;
+  document.getElementById("gioLam").value = employee[0].giolam;
+}
+function deleteFromTable(tknv) {
+  employeeHandle.deleteEmployee(tknv);
+  setLocalStorage();
+  getLocalStorage();
+}
+
+function updateTable() {
+  const tknv = document.getElementById("tknv").value;
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const datepicker = document.getElementById("datepicker").value;
+  const luongCB = document.getElementById("luongCB").value;
+  const chucvu = document.getElementById("chucvu").value;
+  const giolam = document.getElementById("gioLam").value;
+  const employeeUpdate = new Employee({
+    tknv,
+    name,
+    email,
+    password,
+    datepicker,
+    luongCB,
+    chucvu,
+    giolam,
+  });
+  employeeHandle.updateEmployee(employeeUpdate);
+  setLocalStorage();
+  getLocalStorage();
+}
+
+function searchTable() {
+  const searchName = document.getElementById("searchName").value;
+  employeeHandle.searchEmployee(searchName);
+  displayTable(employeeHandle.searchEmployee(searchName));
+}
+
+document.getElementById("btnThemNV").onclick = (event) => {
+  let form = document.querySelector(".needs-validation");
+  if (!form.checkValidity()) {
+    event.preventDefault();
+    event.stopPropagation();
+    form.classList.add("was-validated");
+  } else {
+    addToTable();
+  }
 };
+document.getElementById("btnCapNhat").onclick = (event) => {
+  let form = document.querySelector(".needs-validation");
+  if (!form.checkValidity()) {
+    event.preventDefault();
+    event.stopPropagation();
+    form.classList.add("was-validated");
+  } else {
+    updateTable();
+  }
+};
+
+document.getElementById("btnTimLoai").onclick = searchTable;
+$("#myModal").on("hidden.bs.modal", function (e) {
+  document.getElementById("tknv").value = "";
+  document.getElementById("name").value = "";
+  document.getElementById("email").value = "";
+  document.getElementById("password").value = "";
+  document.getElementById("datepicker").value = "";
+  document.getElementById("luongCB").value = "";
+  document.getElementById("chucvu").value = "";
+  document.getElementById("gioLam").value = "";
+  document.querySelector(".needs-validation").classList.remove("was-validated");
+});
